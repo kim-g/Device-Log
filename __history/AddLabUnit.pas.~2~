@@ -1,0 +1,37 @@
+unit AddLabUnit;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Data.DB, Data.Win.ADODB;
+
+type
+  TAddLab = class(TForm)
+    Label1: TLabel;
+    FullName: TEdit;
+    Query: TADOQuery;
+    Button1: TButton;
+    Button2: TButton;
+    procedure Button2Click(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  AddLab: TAddLab;
+
+implementation
+
+{$R *.dfm}
+
+uses MainMenu;
+
+procedure TAddLab.Button2Click(Sender: TObject);
+begin
+Close;
+end;
+
+end.

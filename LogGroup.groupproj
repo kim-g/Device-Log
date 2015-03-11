@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{8AA066CE-3F6E-4129-A6F1-230AB1A07854}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="UVLog.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="ChangeDate.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="UVLog">
+        <MSBuild Projects="UVLog.dproj"/>
+    </Target>
+    <Target Name="UVLog:Clean">
+        <MSBuild Projects="UVLog.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="UVLog:Make">
+        <MSBuild Projects="UVLog.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="ChangeDate">
+        <MSBuild Projects="ChangeDate.dproj"/>
+    </Target>
+    <Target Name="ChangeDate:Clean">
+        <MSBuild Projects="ChangeDate.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ChangeDate:Make">
+        <MSBuild Projects="ChangeDate.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="UVLog;ChangeDate"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="UVLog:Clean;ChangeDate:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="UVLog:Make;ChangeDate:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

@@ -1,0 +1,159 @@
+{Журнал для учёта работы оборудования
+
+Автор – Григорий Ким (kim-g@ios.uran.ru)
+Лаборатория гетероциклических соединений
+Института Органического синтеза УрО РАН им. И.Я Постовского
+
+Версия IDE RAD STUDIO XE3
+
+Используются сторонние разработки:
+* FastReport4
+* SQLite3
+
+Код открытый.}
+
+unit MainMenu;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Data.DB, Data.Win.ADODB, ShlObj,
+  INIFiles, frxClass, frxDBSet, SQLite3, SQLiteTable3, Data.DbxSqlite,
+  Data.DBXPool, Data.DBXTrace, Data.FMTBcd, Data.SqlExpr, Vcl.Imaging.GIFImg,
+  Vcl.ExtCtrls;
+
+type
+  TMainMenuForm = class(TForm)
+    Button1: TButton;                               //Подключение к БД для Fast Report
+    Button2: TButton;                               //Просмотр журнала
+    LogReport: TfrxReport;                //Данные для отчёта
+    DB: TSQLConnection;                             //База для вывода на печать
+    LogQuery: TSQLQuery;
+    LogDataSet: TfrxDBDataset;
+    Image1: TImage;
+    Label1: TLabel;
+    Label2: TLabel;                            //Запрос на вывод на печать.
+    procedure Button1Click(Sender: TObject);        //Добавить запись
+    procedure FormCreate(Sender: TObject);          //Подключение к БД и загрузка
+    procedure Button2Click(Sender: TObject);        //Посмотреть отчёт
+  private
+    function AppData:string;                        //Пользовательский каталог AppData или Application Data
+  public
+    { Public declarations }
+  end;
+
+  procedure ExecSQL(SQL:string);                    //Выполнить SQL запрос в кодировке UTF-8
+  function GetTable(SQL:string):TSQLiteTable;       //Выдать таблицу по  SQL запросу в кодировке UTF-8
+
+var
+  MainMenuForm: TMainMenuForm;                      //Главное окно
+  Config:TINIFile;                                  //Настройки
+  SQLite:TSQLiteDatabase;                           //Сама база
+
+
+const
+  PF = '\IOS\UV LOG\';                              //Адрес в пользовательском каталоге
+  CONFIG_FILE = 'config.ini';                       //Имя файла с настройками
+
+implementation
+
+{$R *.dfm}
+
+uses AddSpUnit, DB_Structure;
+
+procedure ExecSQL(SQL:string);
+begin
+SQLite.ExecSQL(UTF8Encode(SQL));
+end;
+
+function GetTable(SQL:string):TSQLiteTable;
+begin
+GetTable:=SQLite.GetTable(UTF8Encode(SQL))
+end;
+
+function TMainMenuForm.AppData: string;             //Получение адреса настроек пользователя
+var
+  PItemID : PItemIDList;
+  ansiSbuf : array[0..MAX_PATH] of char;
+begin
+SHGetSpecialFolderLocation( MainMenuForm.Handle, CSIDL_APPDATA, PItemID );
+SHGetPathFromIDList( PItemID, @ansiSbuf[0] );
+AppData := ansiSbuf;
+end;
+
+procedure TMainMenuForm.Button1Click(Sender: TObject);     //Показать форму добавления записи
+begin
+AddSp.ShowAddForm;
+end;
+
+procedure TMainMenuForm.Button2Click(Sender: TObject);     //Показать отчёт
+begin
+LogReport.ShowReport;
+end;
+
+procedure TMainMenuForm.FormCreate(Sender: TObject);       //Загрузка БД
+var
+  DB_Name:string;       //Имя БД
+  I:Integer;            //Счётчик
+  Table:TSQLiteTable;   //Таблица
+const
+  NF = 'NoFile';        //Чтобы всё время не писать.
+begin
+with (Image1.Picture.Graphic as TGIFImage) do
+  begin
+  AnimateLoop := glEnabled;
+  AnimationSpeed := 100;
+  Animate := True;
+  end;
+
+if not DirectoryExists(AppData+PF) then
+  ForceDirectories(AppData+PF);                   //Если нет пути к файлу с настройками, то создаём его
+Config:=TINIFile.Create(ExtractFilePath(Application.ExeName)+CONFIG_FILE);             //Открываем файл с настройками.
+
+//Подгружаем надписи
+Caption:=Config.ReadString('General','Title','ERROR!!!');
+Application.Title:=Config.ReadString('General','Title','ERROR!!!');
+
+//Загружаем адрес БД
+DB_Name := Config.ReadString('General','DBFile',NF);
+
+//Проверяем, есть ли запись в файле конфигурации
+if DB_Name = NF then
+  begin
+  ShowMessage('Файл базы данных не задан.'+#13#10+
+  'Пожалуйста, задайте путь к файлу БД в конфигурационном файле "'+ExtractFilePath(Application.ExeName)+CONFIG_FILE+'"');
+  Application.Terminate;
+  end;
+
+//Проверяем, сужествует ли файл. Если нет, предупреждаем, что он будет создан.
+if not FileExists(DB_Name)
+  then ShowMessage('Файл базы данных "'+DB_Name+'" не существует.'+#13#10+
+  'Создаётся пустая база по адресу "'+DB_Name+'"');
+
+//Открываем базу
+SQLite := TSQLiteDatabase.Create(DB_Name);
+  //Проверка существования нужных таблиц
+  try
+    for I := 1 to DBS_Tables_Count do
+      if not SQLite.TableExists(DBS_TABLES[I]) then
+        ExecSQL(DBS_TABLES_QUERY[I]);
+    //Заполнение первичными данными
+    for I := 1 to DBS_FILL_COUNT do
+      begin
+      Table:=GetTable(DBS_FILL_EMPTY[I]);
+      if Table.Count=0 then
+        ExecSQL(DBS_FILL[I]);
+      Table.Free;
+      end;
+  except
+    ShowMessage('При создании базы произошла ошибка.');
+    Application.Terminate;
+  end;
+
+//Указываем имя БД для DB
+DB.Params.Values['Database']:=DB_Name;
+DB.Connected:=true;
+end;
+
+end.

@@ -1,0 +1,27 @@
+program UVLog;
+
+uses
+  Vcl.Forms,
+  MainMenu in 'MainMenu.pas' {MainMenuForm},
+  AddSpUnit in 'AddSpUnit.pas' {AddSp},
+  AddOrgUnit in 'AddOrgUnit.pas' {AddOrg},
+  AddLabUnit in 'AddLabUnit.pas' {AddLab},
+  AddOrderUnit in 'AddOrderUnit.pas' {AddOrder},
+  AddNIR in 'AddNIR.pas' {Add_NIR},
+  AddTaskUnit in 'AddTaskUnit.pas' {AddTask},
+  StFunctions in 'StFunctions.pas';
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TMainMenuForm, MainMenuForm);
+  Application.CreateForm(TAddSp, AddSp);
+  Application.CreateForm(TAddOrg, AddOrg);
+  Application.CreateForm(TAddLab, AddLab);
+  Application.CreateForm(TAddOrder, AddOrder);
+  Application.CreateForm(TAdd_NIR, Add_NIR);
+  Application.CreateForm(TAddTask, AddTask);
+  Application.Run;
+end.
