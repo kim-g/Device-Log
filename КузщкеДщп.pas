@@ -23,7 +23,7 @@ type
   end;
 
 var
-  Report: TReport;
+  Report: TReport;//Тест
 
 implementation
 
