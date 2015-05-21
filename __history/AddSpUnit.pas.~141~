@@ -73,10 +73,11 @@ type
 
 var
   AddSp: TAddSp;
-  OrgID, LabID, OrderNameID, NIRID, TaskID, UserID:TStringList;
-  Query:TStringList;
+  OrgID, LabID, OrderNameID, NIRID, TaskID, UserID:TStringList;           //Списки значений ID для отдельных ComboBox
+  Query:TStringList;                                                      // ---- Уже не нужно ---- //
 
 const
+  //Запросы по наполнению ComboBox
   OrgSQL='SELECT `ID`,`Name` FROM `Organization` ORDER BY `Other`, `Name`;';
   LabSQL='SELECT `ID`, `FullName` FROM `Laboratory` ORDER BY `First` DESC, `FullName`;';
   NIRSQL='SELECT `ID`, `Num` || '' ('' || `Comment` || '')'' AS NumComment FROM `NIR` ORDER BY `First` DESC, `Num`;';
@@ -95,11 +96,12 @@ uses MainMenu, AddOrgUnit, AddLabUnit, AddOrderUnit, AddNIR, AddTaskUnit,
 
 procedure TAddSp.Button1Click(Sender: TObject);
 var
-  s:String;
-  s1:String;
-  Table:TSQLiteTable;
+  s:String;                  //Временная переменная для создания запроса
+  s1:String;                 //Временная переменная для создания запроса
+  Table:TSQLiteTable;        //Таблица
   SysTime:TSystemTime;
   MaxNo:Integer;
+  TempS1:string;
 begin
 DateTimeToSystemTime(Date,SysTime);
 Table:=GetTable('SELECT MAX(`No`) AS MaxNo FROM `Spectra` WHERE `Year`='+IntToStr(SysTime.wYear)+';');
@@ -109,32 +111,36 @@ if Table.Count=0 then
   MaxNo:=0;
   end;
 
-MaxNo:=StrToInt(UTF8Decode(Table.FieldAsString(Table.FieldIndex['MaxNo'])));
+TempS1:=Table.FieldAsString(Table.FieldIndex['MaxNo']);
+if TempS1='' then TempS1:='0';
+
+MaxNo:=StrToInt(UTF8Decode(TempS1));
 inc(MaxNo);
 
-s:='INSERT INTO `Spectra` (`No`,`Date`, `Year`, `Organization`, ';
-if OrgID[Org.ItemIndex]='1' then s:=s+'`Laboratory`, ';
-s:=s+'`Name`, `Subst`, `Conditions`, `Number`, `Task`, `User`';
-if NIR.ItemIndex<>-1 then s:=s+', `NIR`';
+s:='INSERT INTO `Spectra` (`No`,`Date`, `Year`, `Organization`, `Laboratory`, ';
+s:=s+'`Name`, `Subst`, `Conditions`, `Number`, `Task`, `User`, `NIR`';
 s:=s+')';
 s1:='VALUES ('+IntToStr(MaxNo)+', DATE(), '+IntToStr(SysTime.wYear)+', '+OrgID[Org.ItemIndex]+', ';
-if OrgID[Org.ItemIndex]='1' then s1:=s1+LabID[Lab.ItemIndex]+', ';
+if OrgID[Org.ItemIndex]='1' then s1:=s1+LabID[Lab.ItemIndex]+', ' else s1:=s1+'1, ';
 s1:=s1+OrderNameID[OrderName.ItemIndex]+', "'+Subst.Text+'", "'+
   Cond.Text+'", '+IntToStr(Number.Value)+', '+TaskID[Task.ItemIndex]+', '+
   UserID[User.ItemIndex];
-if NIR.ItemIndex<>-1 then s1:=s1+', '+NIRID[NIR.ItemIndex];
+s1:=s1+', '+NIRID[NIR.ItemIndex];
 S1:=S1+');';
 
 ExecSQL(S+' '+S1);
 
 ShowMessage('Запись о соединении '+Subst.Text+' успешно добавлена.');
 
-Subst.Text:='';
-Cond.Text:='';
-Number.Value:=0;
+if Config.ReadBool('Zeroing','Subst',false) then Subst.Text:='';
+if Config.ReadBool('Zeroing','Cond',false) then Cond.Text:='';
+if Config.ReadBool('Zeroing','Number',true) then Number.Value:=0;
 CheckIfCorrect;
 
-Subst.SetFocus;
+TempS1:=Config.ReadString('Zeroing','Autofocus','Subst');
+if TempS1='Subst' then Subst.SetFocus else
+  if TempS1='Task' then Task.SetFocus;
+
 end;
 
 procedure TAddSp.Button2Click(Sender: TObject);
@@ -296,7 +302,10 @@ begin
 ComboBox.Items.Clear;
 Table:=GetTable(SQL_Query);
 for I := 0 to Table.Count-1 do
+  begin
   ComboBox.Items.Add(UTF8Decode(Table.FieldAsString(Table.FieldIndex[NameString])));
+  Table.Next;
+  end;
 Table.Free;
 end;
 
@@ -307,6 +316,7 @@ var
   I: Integer;
 begin
 ComboBox.Items.Clear;
+ID.Clear;
 Table:=GetTable(SQL_Query);
 if Table.Count=0 then
   begin

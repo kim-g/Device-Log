@@ -20,7 +20,8 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Data.DB, Data.Win.ADODB, ShlObj,
   INIFiles, frxClass, frxDBSet, SQLite3, SQLiteTable3, Data.DbxSqlite,
-  Data.DBXPool, Data.DBXTrace, Data.FMTBcd, Data.SqlExpr;
+  Data.DBXPool, Data.DBXTrace, Data.FMTBcd, Data.SqlExpr, Vcl.Imaging.GIFImg,
+  Vcl.ExtCtrls;
 
 type
   TMainMenuForm = class(TForm)
@@ -29,18 +30,27 @@ type
     LogReport: TfrxReport;                //Данные для отчёта
     DB: TSQLConnection;                             //База для вывода на печать
     LogQuery: TSQLQuery;
-    LogDataSet: TfrxDBDataset;                            //Запрос на вывод на печать.
+    LogDataSet: TfrxDBDataset;
+    Image1: TImage;
+    Label1: TLabel;
+    Label2: TLabel;
+    Button3: TButton;
+    Button4: TButton;
+    Button5: TButton;                            //Запрос на вывод на печать.
     procedure Button1Click(Sender: TObject);        //Добавить запись
     procedure FormCreate(Sender: TObject);          //Подключение к БД и загрузка
-    procedure Button2Click(Sender: TObject);        //Посмотреть отчёт
+    procedure Button2Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);        //Посмотреть отчёт
   private
     function AppData:string;                        //Пользовательский каталог AppData или Application Data
   public
     { Public declarations }
   end;
 
-  procedure ExecSQL(SQL:string);
-  function GetTable(SQL:string):TSQLiteTable;
+  procedure ExecSQL(SQL:string);                    //Выполнить SQL запрос в кодировке UTF-8
+  function GetTable(SQL:string):TSQLiteTable;       //Выдать таблицу по  SQL запросу в кодировке UTF-8
 
 var
   MainMenuForm: TMainMenuForm;                      //Главное окно
@@ -56,7 +66,7 @@ implementation
 
 {$R *.dfm}
 
-uses AddSpUnit, DB_Structure;
+uses AddSpUnit, DB_Structure, About_IOS_Unit, ReportLog;
 
 procedure ExecSQL(SQL:string);
 begin
@@ -88,6 +98,22 @@ begin
 LogReport.ShowReport;
 end;
 
+procedure TMainMenuForm.Button3Click(Sender: TObject);
+begin
+Report.Prepare;
+Report.ShowModal;
+end;
+
+procedure TMainMenuForm.Button4Click(Sender: TObject);     //Показать окно «О программе»
+begin
+AboutForm.ShowModal;
+end;
+
+procedure TMainMenuForm.Button5Click(Sender: TObject);     //Выйти из программы
+begin
+Application.Terminate;
+end;
+
 procedure TMainMenuForm.FormCreate(Sender: TObject);       //Загрузка БД
 var
   DB_Name:string;       //Имя БД
@@ -96,6 +122,13 @@ var
 const
   NF = 'NoFile';        //Чтобы всё время не писать.
 begin
+with (Image1.Picture.Graphic as TGIFImage) do
+  begin
+  AnimateLoop := glEnabled;
+  AnimationSpeed := 100;
+  Animate := True;
+  end;
+
 if not DirectoryExists(AppData+PF) then
   ForceDirectories(AppData+PF);                   //Если нет пути к файлу с настройками, то создаём его
 Config:=TINIFile.Create(ExtractFilePath(Application.ExeName)+CONFIG_FILE);             //Открываем файл с настройками.
@@ -103,6 +136,7 @@ Config:=TINIFile.Create(ExtractFilePath(Application.ExeName)+CONFIG_FILE);      
 //Подгружаем надписи
 Caption:=Config.ReadString('General','Title','ERROR!!!');
 Application.Title:=Config.ReadString('General','Title','ERROR!!!');
+Label2.Caption := Config.ReadString('General','Title','ERROR!!!');
 
 //Загружаем адрес БД
 DB_Name := Config.ReadString('General','DBFile',NF);

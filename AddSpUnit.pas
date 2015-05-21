@@ -291,7 +291,7 @@ ShowData(User,UserID,UserSQL,
   'FName','ID');
 Cond.text:='';
 CheckIfCorrect;
-ShowModal;
+Show;
 end;
 
 procedure TAddSp.ShowDataMin(ComboBox: TComboBox; SQL_Query, NameString: string);
