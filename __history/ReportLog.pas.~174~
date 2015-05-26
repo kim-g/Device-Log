@@ -320,7 +320,7 @@ const
     for I2 := 0 to P_Tasks_List.Count-1 do
       M_Add(P_Tasks_List[I2]);
 
-    Org.Next;
+
 
     P_Tasks_List.Free;
     P_Tasks_List_N.Free;
@@ -346,20 +346,25 @@ const
 
     for I2 := 0 to NIR.Count-1 do
       begin
-      Table:=GetTable('SELECT COUNT(`Number`) AS N FROM `Spectra` '+
+      S1:='SELECT COUNT(`Number`) AS N FROM `Spectra` '+
         'WHERE (`Organization`='+Org.FieldAsString(Org.FieldIndex['ID'])+') '+
         'AND (`NIR`='+NIR.FieldAsString(NIR.FieldIndex['ID'])+ ') '+
-        'AND'+WHERE_Date);
+        'AND'+WHERE_Date;
+      Table:=GetTable(S1);
+
+      M_Add('     ------- DEBUG ------- S1='+S1);
 
       if (Table.Count=0) or (Table.FieldAsInteger(Table.FieldIndex['N'])=0)
-        then Continue;
+        then begin NIR.Next; Continue; end;
 
-      S1:='   - '+NIR.FieldAsString(NIR.FieldIndex['Title']);
+      S1:='   - '+UTF8Decode(NIR.FieldAsString(NIR.FieldIndex['Title']));
         repeat
         M_Add(DevideString(S1,S1));
         S1:='     '+S1
         until S1='     ';
 
+      NIR.Next;
+      Table.Free;
       end;
 
     NIR.Free;
@@ -399,6 +404,7 @@ const
     GetTasks;
     GetNIR;
 
+    Org.Next;
 
     M_Add('');
     end;
