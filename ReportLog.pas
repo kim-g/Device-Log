@@ -363,7 +363,7 @@ const
       if (Table.Count=0) or (Table.FieldAsInteger(Table.FieldIndex['N'])=0)
         then begin NIR.Next; Continue; end;
 
-      S1:='   - '+UTF8Decode(NIR.FieldAsString(NIR.FieldIndex['Title']));
+      S1:='   - '+UTF8Decode(NIR.FieldAsString(NIR.FieldIndex['Num']));
         repeat
         M_Add(DevideString(S1,S1));
         S1:='     '+S1
@@ -441,13 +441,15 @@ TitleShow;
 inc(PB);    //2,3
 TotalWorkShow;
 
-inc(PB);    //4
-Organizations;
 
-inc(PB);    //5
+
+inc(PB);    //4
 ShowTotalTasksN;
 ShowTaskTime;
 ShowTotalTasks;
+
+inc(PB);    //5
+Organizations;
 
 inc(PB);    //6
 
