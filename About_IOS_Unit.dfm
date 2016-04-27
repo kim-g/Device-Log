@@ -25348,7 +25348,7 @@ object AboutForm: TAboutForm
     Height = 24
     Alignment = taRightJustify
     AutoSize = False
-    Caption = '2015 '#1075'.'
+    Caption = '2016 '#1075'.'
     Transparent = True
     WordWrap = True
   end

@@ -36,7 +36,9 @@ type
     Label2: TLabel;
     Button3: TButton;
     Button4: TButton;
-    Button5: TButton;                            //Запрос на вывод на печать.
+    Button5: TButton;
+    Edit1: TEdit;
+    Label3: TLabel;                            //Запрос на вывод на печать.
     procedure Button1Click(Sender: TObject);        //Добавить запись
     procedure FormCreate(Sender: TObject);          //Подключение к БД и загрузка
     procedure Button2Click(Sender: TObject);
@@ -45,6 +47,7 @@ type
     procedure Button3Click(Sender: TObject);        //Посмотреть отчёт
   private
     function AppData:string;                        //Пользовательский каталог AppData или Application Data
+    procedure Backup;
   public
     { Public declarations }
   end;
@@ -61,6 +64,7 @@ var
 const
   PF = '\IOS\UV LOG\';                              //Адрес в пользовательском каталоге
   CONFIG_FILE = 'config.ini';                       //Имя файла с настройками
+  CompileYear = '2016';
 
 implementation
 
@@ -88,6 +92,41 @@ SHGetPathFromIDList( PItemID, @ansiSbuf[0] );
 AppData := ansiSbuf;
 end;
 
+procedure TMainMenuForm.Backup;
+var
+  Table: TSQLiteTable;
+  BackupDate: string;
+  LastBackup: TDate;
+  FileName:string;
+begin
+// Запрашиваем, когда был последний бекап
+Table := GetTable('SELECT * FROM `BackupInfo` ORDER BY `Backup_Date` DESC LIMIT 1');
+if Table.Count > 0 then    // Если он вообще был
+  begin
+  BackupDate := Table.FieldAsString(Table.FieldIndex['Backup_Date']);
+  LastBackup := EncodeDate(StrToInt( BackupDate.Substring(0,4)),StrToInt( BackupDate.Substring(5,2)),
+  StrToInt( BackupDate.Substring(8,2)));
+
+  // То проверяем время. Если прошло меньше недели, ничего не делаем.
+  if LastBackup + 7 > Now then Exit;
+  end;
+
+// В любом другом случае
+Filename := Config.ReadString('General','DBFile','');
+FileName := StringReplace(ExtractFileName(FileName),ExtractFileExt(FileName),'',[]);
+FileName := Config.ReadString('General','DBBackup','') +
+  FileName + ' ' + FormatDateTime('yyyy-mm-dd', Now) + '.db';
+
+// Скопируем в папку с бекапом
+CopyFile(PWideChar(WideString(Config.ReadString('General','DBFile',''))),
+  PWideChar(WideString(FileName)), false);
+
+// и отметим это в БД
+ExecSQL('INSERT INTO `BackupInfo` (`Backup_date`, `Backup_File`) VALUES (Date(), "' +
+  FileName + '");');
+
+end;
+
 procedure TMainMenuForm.Button1Click(Sender: TObject);     //Показать форму добавления записи
 begin
 AddSp.ShowAddForm;
@@ -95,6 +134,8 @@ end;
 
 procedure TMainMenuForm.Button2Click(Sender: TObject);     //Показать отчёт
 begin
+LogQuery.SQL[15] := 'WHERE `Date` LIKE "'+Edit1.Text+'%"';
+LogQuery.Active:=true;
 LogReport.ShowReport;
 end;
 
@@ -129,14 +170,16 @@ with (Image1.Picture.Graphic as TGIFImage) do
   Animate := True;
   end;
 
-if not DirectoryExists(AppData+PF) then
-  ForceDirectories(AppData+PF);                   //Если нет пути к файлу с настройками, то создаём его
+{if not DirectoryExists(AppData+PF) then
+  ForceDirectories(AppData+PF);  }                 //Если нет пути к файлу с настройками, то создаём его
 Config:=TINIFile.Create(ExtractFilePath(Application.ExeName)+CONFIG_FILE);             //Открываем файл с настройками.
 
 //Подгружаем надписи
 Caption:=Config.ReadString('General','Title','ERROR!!!');
 Application.Title:=Config.ReadString('General','Title','ERROR!!!');
 Label2.Caption := Config.ReadString('General','Title','ERROR!!!');
+
+Edit1.Text := IntToStr(CurrentYear);
 
 //Загружаем адрес БД
 DB_Name := Config.ReadString('General','DBFile',NF);
@@ -159,8 +202,7 @@ SQLite := TSQLiteDatabase.Create(DB_Name);
   //Проверка существования нужных таблиц
   try
     for I := 1 to DBS_Tables_Count do
-      if not SQLite.TableExists(DBS_TABLES[I]) then
-        ExecSQL(DBS_TABLES_QUERY[I]);
+      ExecSQL(DBS_TABLES_QUERY[I]);
     //Заполнение первичными данными
     for I := 1 to DBS_FILL_COUNT do
       begin
@@ -177,6 +219,9 @@ SQLite := TSQLiteDatabase.Create(DB_Name);
 //Указываем имя БД для DB
 DB.Params.Values['Database']:=DB_Name;
 DB.Connected:=true;
+
+//Проверяем и делаем бекап
+Backup;
 end;
 
 end.

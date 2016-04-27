@@ -80,7 +80,7 @@ const
   //Запросы по наполнению ComboBox
   OrgSQL='SELECT `ID`,`Name` FROM `Organization` ORDER BY `Other`, `Name`;';
   LabSQL='SELECT `ID`, `FullName` FROM `Laboratory` ORDER BY `First` DESC, `FullName`;';
-  NIRSQL='SELECT `ID`, `Num` || '' ('' || `Comment` || '')'' AS NumComment FROM `NIR` ORDER BY `First` DESC, `Num`;';
+  NIRSQL='SELECT `ID`, `Num` || '' ('' || `Comment` || '')'' AS NumComment FROM `NIR` WHERE `show`=1 ORDER BY `First` DESC, `Num`;';
   TaskSQL='SELECT `ID`, `Name` FROM `Task` ORDER BY `Name`;';
   UserSQL='SELECT `ID`, `LastName` || '' '' || `FirstName` || '' '' || `FathersName` AS FName FROM `User` ORDER BY `LastName`';
   CondSQL='SELECT `Condition` FROM `Conditions` ORDER BY `Condition`;';

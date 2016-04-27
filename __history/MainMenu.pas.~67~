@@ -1,0 +1,228 @@
+{Журнал для учёта работы оборудования
+
+Автор – Григорий Ким (kim-g@ios.uran.ru)
+Лаборатория гетероциклических соединений
+Института Органического синтеза УрО РАН им. И.Я Постовского
+
+Версия IDE RAD STUDIO XE3
+
+Используются сторонние разработки:
+* FastReport4
+* SQLite3
+
+Код открытый.}
+
+unit MainMenu;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Data.DB, Data.Win.ADODB, ShlObj,
+  INIFiles, frxClass, frxDBSet, SQLite3, SQLiteTable3, Data.DbxSqlite,
+  Data.DBXPool, Data.DBXTrace, Data.FMTBcd, Data.SqlExpr, Vcl.Imaging.GIFImg,
+  Vcl.ExtCtrls;
+
+type
+  TMainMenuForm = class(TForm)
+    Button1: TButton;                               //Подключение к БД для Fast Report
+    Button2: TButton;                               //Просмотр журнала
+    LogReport: TfrxReport;                //Данные для отчёта
+    DB: TSQLConnection;                             //База для вывода на печать
+    LogQuery: TSQLQuery;
+    LogDataSet: TfrxDBDataset;
+    Image1: TImage;
+    Label1: TLabel;
+    Label2: TLabel;
+    Button3: TButton;
+    Button4: TButton;
+    Button5: TButton;
+    Edit1: TEdit;
+    Label3: TLabel;
+    Button6: TButton;                            //Запрос на вывод на печать.
+    procedure Button1Click(Sender: TObject);        //Добавить запись
+    procedure FormCreate(Sender: TObject);          //Подключение к БД и загрузка
+    procedure Button2Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
+    procedure Button6Click(Sender: TObject);        //Посмотреть отчёт
+  private
+    function AppData:string;                        //Пользовательский каталог AppData или Application Data
+    procedure Backup;
+  public
+    { Public declarations }
+  end;
+
+  procedure ExecSQL(SQL:string);                    //Выполнить SQL запрос в кодировке UTF-8
+  function GetTable(SQL:string):TSQLiteTable;       //Выдать таблицу по  SQL запросу в кодировке UTF-8
+
+var
+  MainMenuForm: TMainMenuForm;                      //Главное окно
+  Config:TINIFile;                                  //Настройки
+  SQLite:TSQLiteDatabase;                           //Сама база
+
+
+const
+  PF = '\IOS\UV LOG\';                              //Адрес в пользовательском каталоге
+  CONFIG_FILE = 'config.ini';                       //Имя файла с настройками
+  CompileYear = '2016';
+
+implementation
+
+{$R *.dfm}
+
+uses AddSpUnit, DB_Structure, About_IOS_Unit, ReportLog;
+
+procedure ExecSQL(SQL:string);
+begin
+SQLite.ExecSQL(UTF8Encode(SQL));
+end;
+
+function GetTable(SQL:string):TSQLiteTable;
+begin
+GetTable:=SQLite.GetTable(UTF8Encode(SQL))
+end;
+
+function TMainMenuForm.AppData: string;             //Получение адреса настроек пользователя
+var
+  PItemID : PItemIDList;
+  ansiSbuf : array[0..MAX_PATH] of char;
+begin
+SHGetSpecialFolderLocation( MainMenuForm.Handle, CSIDL_APPDATA, PItemID );
+SHGetPathFromIDList( PItemID, @ansiSbuf[0] );
+AppData := ansiSbuf;
+end;
+
+procedure TMainMenuForm.Backup;
+var
+  Table: TSQLiteTable;
+  BackupDate: string;
+  LastBackup: TDate;
+begin
+// Запрашиваем, когда был последний бекап
+Table := GetTable('SELECT * FROM `BackupInfo` ORDER BY `Backup_Date` DESC LIMIT 1');
+if Table.Count > 0 then    // Если он вообще был
+  begin
+  BackupDate := Table.FieldAsString(Table.FieldIndex['Backup_Date']);
+  LastBackup := EncodeDate(StrToInt( BackupDate.Substring(0,4)),StrToInt( BackupDate.Substring(5,2)),
+  StrToInt( BackupDate.Substring(8,2)));
+
+  // То проверяем время. Если прошло меньше недели, ничего не делаем.
+  if LastBackup + 7 > Now then Exit;
+  end;
+
+// В любом другом случае
+
+end;
+
+procedure TMainMenuForm.Button1Click(Sender: TObject);     //Показать форму добавления записи
+begin
+AddSp.ShowAddForm;
+end;
+
+procedure TMainMenuForm.Button2Click(Sender: TObject);     //Показать отчёт
+begin
+LogQuery.SQL[15] := 'WHERE `Date` LIKE "'+Edit1.Text+'%"';
+LogQuery.Active:=true;
+LogReport.ShowReport;
+end;
+
+procedure TMainMenuForm.Button3Click(Sender: TObject);
+begin
+Report.Prepare;
+Report.ShowModal;
+end;
+
+procedure TMainMenuForm.Button4Click(Sender: TObject);     //Показать окно «О программе»
+begin
+AboutForm.ShowModal;
+end;
+
+procedure TMainMenuForm.Button5Click(Sender: TObject);     //Выйти из программы
+begin
+Application.Terminate;
+end;
+
+procedure TMainMenuForm.Button6Click(Sender: TObject);
+var
+  myformat: TFormatSettings;
+  DateC:TDate;
+  Str,ResStr:string;
+begin
+Str :='2015-12-28';
+DateC := EncodeDate(StrToInt( Str.Substring(0,4)),StrToInt( Str.Substring(5,2)),
+  StrToInt( Str.Substring(8,2)));
+ShowMessage(DateToStr(DateC+7));
+end;
+
+procedure TMainMenuForm.FormCreate(Sender: TObject);       //Загрузка БД
+var
+  DB_Name:string;       //Имя БД
+  I:Integer;            //Счётчик
+  Table:TSQLiteTable;   //Таблица
+const
+  NF = 'NoFile';        //Чтобы всё время не писать.
+begin
+with (Image1.Picture.Graphic as TGIFImage) do
+  begin
+  AnimateLoop := glEnabled;
+  AnimationSpeed := 100;
+  Animate := True;
+  end;
+
+if not DirectoryExists(AppData+PF) then
+  ForceDirectories(AppData+PF);                   //Если нет пути к файлу с настройками, то создаём его
+Config:=TINIFile.Create(ExtractFilePath(Application.ExeName)+CONFIG_FILE);             //Открываем файл с настройками.
+
+//Подгружаем надписи
+Caption:=Config.ReadString('General','Title','ERROR!!!');
+Application.Title:=Config.ReadString('General','Title','ERROR!!!');
+Label2.Caption := Config.ReadString('General','Title','ERROR!!!');
+
+Edit1.Text := IntToStr(CurrentYear);
+
+//Загружаем адрес БД
+DB_Name := Config.ReadString('General','DBFile',NF);
+
+//Проверяем, есть ли запись в файле конфигурации
+if DB_Name = NF then
+  begin
+  ShowMessage('Файл базы данных не задан.'+#13#10+
+  'Пожалуйста, задайте путь к файлу БД в конфигурационном файле "'+ExtractFilePath(Application.ExeName)+CONFIG_FILE+'"');
+  Application.Terminate;
+  end;
+
+//Проверяем, сужествует ли файл. Если нет, предупреждаем, что он будет создан.
+if not FileExists(DB_Name)
+  then ShowMessage('Файл базы данных "'+DB_Name+'" не существует.'+#13#10+
+  'Создаётся пустая база по адресу "'+DB_Name+'"');
+
+//Открываем базу
+SQLite := TSQLiteDatabase.Create(DB_Name);
+  //Проверка существования нужных таблиц
+  try
+    for I := 1 to DBS_Tables_Count do
+      ExecSQL(DBS_TABLES_QUERY[I]);
+    //Заполнение первичными данными
+    for I := 1 to DBS_FILL_COUNT do
+      begin
+      Table:=GetTable(DBS_FILL_EMPTY[I]);
+      if Table.Count=0 then
+        ExecSQL(DBS_FILL[I]);
+      Table.Free;
+      end;
+  except
+    ShowMessage('При создании базы произошла ошибка.');
+    Application.Terminate;
+  end;
+
+//Указываем имя БД для DB
+DB.Params.Values['Database']:=DB_Name;
+DB.Connected:=true;
+
+//Проверяем бекап
+
+end;
+
+end.

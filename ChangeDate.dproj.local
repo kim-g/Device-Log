@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899.12.30 00:00:00.000.892,C:\Users\~gakim\Documents\RAD Studio\Projects\Unit1.dfm=K:\Kim\Delphi\UV-DB\ChDate.dfm</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.656,C:\Users\~gakim\Documents\RAD Studio\Projects\Project1.dproj=K:\Kim\Delphi\UV-DB\ChangeDate.dproj</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.892,C:\Users\~gakim\Documents\RAD Studio\Projects\Unit1.pas=K:\Kim\Delphi\UV-DB\ChDate.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.892,K:\Kim\Delphi\UV-DB\ChDate.dfm=C:\Users\~gakim\Documents\RAD Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.892,K:\Kim\Delphi\UV-DB\ChDate.pas=C:\Users\~gakim\Documents\RAD Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.656,K:\Kim\Delphi\UV-DB\ChangeDate.dproj=C:\Users\~gakim\Documents\RAD Studio\Projects\Project1.dproj</Transaction>
     <Transaction>1899.12.30 00:00:00.000.161,=C:\Users\~gakim\Documents\RAD Studio\Projects\Unit1.pas</Transaction>
   </Transactions>
 </BorlandProject>

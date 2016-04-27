@@ -1567,6 +1567,13 @@ object MainMenuForm: TMainMenuForm
     AutoSize = False
     Caption = 'Label2'
   end
+  object Label3: TLabel
+    Left = 375
+    Top = 190
+    Width = 29
+    Height = 23
+    Caption = #1075#1086#1076
+  end
   object Button1: TButton
     Left = 8
     Top = 135
@@ -1579,9 +1586,9 @@ object MainMenuForm: TMainMenuForm
   object Button2: TButton
     Left = 8
     Top = 182
-    Width = 401
+    Width = 289
     Height = 41
-    Caption = #1055#1088#1086#1089#1084#1086#1090#1088' '#1078#1091#1088#1085#1072#1083#1072
+    Caption = #1055#1088#1086#1089#1084#1086#1090#1088' '#1078#1091#1088#1085#1072#1083#1072' '#1079#1072
     TabOrder = 1
     OnClick = Button2Click
   end
@@ -1611,6 +1618,15 @@ object MainMenuForm: TMainMenuForm
     Caption = #1042#1099#1093#1086#1076
     TabOrder = 4
     OnClick = Button5Click
+  end
+  object Edit1: TEdit
+    Left = 303
+    Top = 188
+    Width = 66
+    Height = 31
+    NumbersOnly = True
+    TabOrder = 5
+    Text = 'Edit1'
   end
   object LogReport: TfrxReport
     Version = '4.12.13'
@@ -2059,7 +2075,7 @@ object MainMenuForm: TMainMenuForm
         'DBXTrace.DriverAssemblyLoader=Borland.Data.TDBXTraceDriverLoader' +
         ',Borland.Data.DbxCommonDriver,Version=17.0.0.0,Culture=neutral,P' +
         'ublicKeyToken=91d62ebb5b0d1b1b')
-    Left = 392
+    Left = 240
     Top = 8
   end
   object LogQuery: TSQLQuery
@@ -2086,6 +2102,8 @@ object MainMenuForm: TMainMenuForm
       '      ON `Organization`.`ID` = `Spectra`.`Organization`)'
       '    ON `Task`.`ID` = `Spectra`.`Task`)'
       '  ON `User`.`ID` = `Spectra`.`User`'
+      ''
+      'WHERE `Date` LIKE '#39'2016%'#39
       'ORDER BY `Date`, `Spectra`.`ID`;')
     SQLConnection = DB
     Left = 360
