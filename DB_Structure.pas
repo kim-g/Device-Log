@@ -12,7 +12,7 @@ const
   DBS_TABLES_QUERY: array [1..DBS_Tables_Count] of String =
     ('CREATE TABLE if not exists `Conditions`   (`ID`	INTEGER PRIMARY KEY AUTOINCREMENT, `Condition` TEXT);',
     'CREATE TABLE if not exists `Laboratory`    (`ID`	INTEGER PRIMARY KEY AUTOINCREMENT, `Name`	TEXT UNIQUE, `FullName`	TEXT UNIQUE, `First`	INTEGER DEFAULT 0);',
-    'CREATE TABLE if not exists `NIR`           (`ID`	INTEGER PRIMARY KEY AUTOINCREMENT, `Num`	TEXT UNIQUE, `Comment`	TEXT, `First`	INTEGER, `Title`	TEXT);',
+    'CREATE TABLE if not exists `NIR`           (`ID` INTEGER PRIMARY KEY AUTOINCREMENT, `Num` TEXT UNIQUE, `Comment` TEXT, `First` INTEGER, `Title` TEXT, `Show` INTEGER DEFAULT 1, `External` INTEGER DEFAULT 0, `ExternalOrganization` TEXT);',
     'CREATE TABLE if not exists `Name`          (`ID`	INTEGER PRIMARY KEY AUTOINCREMENT, `FirstName`	TEXT,	`Fathersname`	TEXT, `LastName`	TEXT, '+
       '`Organization`	INTEGER, `Laboratory`	INTEGER);',
     'CREATE TABLE if not exists `Organization`  (`ID`	INTEGER PRIMARY KEY AUTOINCREMENT, `Name`	TEXT UNIQUE, `FullName`	TEXT UNIQUE, `Other`	INTEGER DEFAULT 1);',

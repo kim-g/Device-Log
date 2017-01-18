@@ -39,8 +39,9 @@ type
     SpeedButton7: TSpeedButton;
     procedure ShowAddForm;
     procedure FormCreate(Sender: TObject);
-    procedure ShowData(ComboBox:TComboBox; ID: TStringList;
-      SQL_Query, NameString, IDString: string);
+    procedure ShowData(ComboBox: TComboBox; ID: TStringList; SQL_Query,
+      NameString, IDString: string; BoolString: string = ''; BoolMask: string = '';
+      BoolField: string = '');
     procedure ShowDataMin(ComboBox:TComboBox;
       SQL_Query, NameString: string);
     procedure OrderNameShow;
@@ -80,7 +81,7 @@ const
   //Запросы по наполнению ComboBox
   OrgSQL='SELECT `ID`,`Name` FROM `Organization` ORDER BY `Other`, `Name`;';
   LabSQL='SELECT `ID`, `FullName` FROM `Laboratory` ORDER BY `First` DESC, `FullName`;';
-  NIRSQL='SELECT `ID`, `Num` || '' ('' || `Comment` || '')'' AS NumComment FROM `NIR` WHERE `show`=1 ORDER BY `First` DESC, `Num`;';
+  NIRSQL='SELECT `ID`, `Num` || '' ('' || `Comment` || '')'' AS NumComment, `External`, `ExternalOrganization` FROM `NIR` WHERE `show`=1 ORDER BY `First` DESC, `Num`;';
   TaskSQL='SELECT `ID`, `Name` FROM `Task` ORDER BY `Name`;';
   UserSQL='SELECT `ID`, `LastName` || '' '' || `FirstName` || '' '' || `FathersName` AS FName FROM `User` ORDER BY `LastName`';
   CondSQL='SELECT `Condition` FROM `Conditions` ORDER BY `Condition`;';
@@ -279,7 +280,7 @@ Lab.ItemIndex:=0;
 OrderNameShow;
 //NIR
 ShowData(NIR,NIRID,NIRSQL,
-  'NumComment','ID');
+  'NumComment','ID','External','{0} -> ВНЕШНЯЯ ОРГ. ({1})', 'ExternalOrganization');
 NIR.ItemIndex:=0;
 //Task
 ShowData(Task,TaskID,TaskSQL,
@@ -310,10 +311,13 @@ Table.Free;
 end;
 
 procedure TAddSp.ShowData(ComboBox: TComboBox; ID: TStringList; SQL_Query,
-  NameString, IDString: string);
+  NameString, IDString: string; BoolString: string = ''; BoolMask: string = '';
+  BoolField: string = '');
 var
   Table:TSQLiteTable;
   I: Integer;
+  TempString: string;
+  PrevValue: string;
 begin
 ComboBox.Items.Clear;
 ID.Clear;
@@ -326,7 +330,27 @@ if Table.Count=0 then
 
 for I := 0 to Table.Count-1 do
   begin
-  ComboBox.Items.Add(UTF8Decode(Table.FieldAsString(Table.FieldIndex[NameString])));
+  TempString :=  UTF8Decode(Table.FieldAsString(Table.FieldIndex[NameString]));
+
+  // Если дано название булевского поля, то
+  if BoolString <> '' then
+    begin
+    // Если оно равно 1 (TRUE)
+    if Table.FieldAsInteger(Table.FieldIndex[BoolString]) = 1 then
+      begin
+      // То добавим ему комментарий из поля BoolField по маске BoolMask,
+      // где {0} – основной текст
+      //     {1} – Текст из BoolField
+      PrevValue := TempString;
+      TempString := BoolMask;
+      TempString := TempString.Replace('{0}', PrevValue);
+      TempString := TempString.Replace('{1}',
+        UTF8Decode(Table.FieldAsString(Table.FieldIndex[BoolField])))
+      end;
+
+    end;
+
+  ComboBox.Items.Add(TempString);
   ID.Add(UTF8Decode(Table.FieldAsString(Table.FieldIndex[IDString])));
   Table.Next;
   end;

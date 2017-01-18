@@ -3,7 +3,7 @@ object Add_NIR: TAdd_NIR
   Top = 0
   BorderStyle = bsDialog
   Caption = #1044#1086#1073#1072#1074#1080#1090#1100' '#1053#1048#1056
-  ClientHeight = 242
+  ClientHeight = 348
   ClientWidth = 443
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -36,6 +36,14 @@ object Add_NIR: TAdd_NIR
     Height = 23
     Caption = #1053#1072#1079#1074#1072#1085#1080#1077
   end
+  object Label4: TLabel
+    Left = 8
+    Top = 218
+    Width = 301
+    Height = 23
+    Caption = #1053#1072#1079#1074#1072#1085#1080#1077' '#1089#1090#1086#1088#1086#1085#1085#1077#1081' '#1086#1088#1075#1072#1085#1080#1079#1072#1094#1080#1080
+    Enabled = False
+  end
   object NIR: TEdit
     Left = 8
     Top = 32
@@ -52,7 +60,7 @@ object Add_NIR: TAdd_NIR
   end
   object Button1: TButton
     Left = 80
-    Top = 183
+    Top = 307
     Width = 121
     Height = 33
     Caption = #1044#1086#1073#1072#1074#1080#1090#1100
@@ -61,7 +69,7 @@ object Add_NIR: TAdd_NIR
   end
   object Button2: TButton
     Left = 224
-    Top = 183
+    Top = 307
     Width = 121
     Height = 33
     Caption = #1054#1090#1084#1077#1085#1080#1090#1100
@@ -74,6 +82,23 @@ object Add_NIR: TAdd_NIR
     Width = 424
     Height = 31
     TabOrder = 1
+  end
+  object ExtOrgName: TEdit
+    Left = 8
+    Top = 242
+    Width = 424
+    Height = 31
+    Enabled = False
+    TabOrder = 5
+  end
+  object IsExternal: TCheckBox
+    Left = 8
+    Top = 183
+    Width = 249
+    Height = 33
+    Caption = #1057#1090#1086#1088#1086#1085#1085#1103#1103' '#1086#1088#1075#1072#1085#1080#1079#1072#1094#1080#1103
+    TabOrder = 6
+    OnClick = IsExternalClick
   end
   object Query: TADOQuery
     Connection = MainMenuForm.DB
