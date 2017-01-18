@@ -110,6 +110,7 @@ object Report: TReport
         Height = 27
         Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1082#1072#1082'...'
         TabOrder = 0
+        OnClick = Button3Click
       end
     end
     object Panel5: TPanel
@@ -157,5 +158,13 @@ object Report: TReport
     OnTimer = PB_TimerTimer
     Left = 512
     Top = 240
+  end
+  object SD: TSaveDialog
+    DefaultExt = 'txt'
+    Filter = 'Text files (*.txt) |*.txt'
+    Options = [ofHideReadOnly, ofPathMustExist, ofEnableSizing]
+    Title = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1086#1090#1095#1105#1090' '#1082#1072#1082'...'
+    Left = 184
+    Top = 432
   end
 end

@@ -25,10 +25,12 @@ type
     Panel6: TPanel;
     ProgressBar1: TProgressBar;
     PB_Timer: TTimer;
+    SD: TSaveDialog;
     procedure Prepare;
     procedure Button2Click(Sender: TObject);
     procedure CreateReport(Sender: TObject);
     procedure PB_TimerTimer(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -66,6 +68,14 @@ I:=60;
 while (StringToDevide[I]<>' ') and (I>0) do dec(I);
 DevideString:=Copy(StringToDevide,0,I-1);
 RightPart:=Copy(StringToDevide,I+1,StringToDevide.Length-1);
+end;
+
+procedure TReport.Button3Click(Sender: TObject);
+begin
+if SD.Execute then
+  begin
+  Memo.Lines.SaveToFile(SD.FileName);
+  end;
 end;
 
 procedure TReport.CreateReport(Sender: TObject);

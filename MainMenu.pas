@@ -64,7 +64,7 @@ var
 const
   PF = '\IOS\UV LOG\';                              //Адрес в пользовательском каталоге
   CONFIG_FILE = 'config.ini';                       //Имя файла с настройками
-  CompileYear = '2016';
+  CompileYear = '2017';
 
 implementation
 
