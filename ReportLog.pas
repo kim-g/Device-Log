@@ -153,6 +153,7 @@ const
   procedure CountTotalTime;
   var
     TotalTime:Double;
+    TotalTasks: Integer;
     NN:Integer;
     T:Double;
     I:Integer;
@@ -181,6 +182,7 @@ const
        T:=Tasks.FieldAsDouble(Tasks.FieldIndex['Time']);
 
        TotalTime:=TotalTime+NN*T;
+       TotalTasks := TotalTasks + NN;
        Tasks_List.Add(To40Symb(' - '+
          UTF8Decode(Tasks.FieldAsString(Tasks.FieldIndex['Name']))+':')+
          FloatToStr(roundTo(NN*T,-1)));
@@ -194,7 +196,7 @@ const
        Tasks.Next;
        end;
 
-
+     M_Add(To40Symb(' - Всего выполнено услуг:')+IntToStr(TotalTasks));
      M_Add(To40Symb(' - Общее время работы:')+FloatToStr(roundTo(TotalTime, -1))+' часов');
      end;
   Tasks.Free;
@@ -260,13 +262,14 @@ const
   procedure Organizations;
   var
     I, I1, NN, TotalNN:Integer;
-    S1:string;
+    S1, NSpectra:string;
     TotalTime, T:Double;
-
+    ExtOrg, InnerJoin: string;
 
 
     procedure GetTasks;
     var I2:Integer;
+
     begin
     P_Tasks_List:=TStringList.Create;
     P_Tasks_List_N:=TStringList.Create;
@@ -284,12 +287,13 @@ const
       begin
       for I2 := 0 to Tasks.Count-1 do
         begin
+
       Table:=GetTable('SELECT '+
          MultiSpectra[Tasks.FieldAsInteger(Tasks.FieldIndex['Multispectra'])]+
-         ' AS N FROM `Spectra` WHERE (`Task`='+
+         ' AS N FROM `Spectra`' + InnerJoin + ' WHERE (`Task`='+
          IntToStr(Tasks.FieldAsInteger(Tasks.FieldIndex['ID']))+') AND'+
          WHERE_Date+' AND (`Organization`='+ Org.FieldAsString(Org.FieldIndex['ID'])
-         +');');
+         +')' + ExtOrg + ';');
 
        NN:=Table.FieldAsInteger(Table.FieldIndex['N']);
        T:=Tasks.FieldAsDouble(Tasks.FieldIndex['Time']);
@@ -306,10 +310,12 @@ const
 
        Table.Free;
 
-       Table:=GetTable('SELECT SUM(`Number`) AS N FROM `Spectra` WHERE (`Task`='+
+
+       Table:=GetTable('SELECT SUM(`Number`) AS N FROM `Spectra`' + InnerJoin +
+         ' WHERE (`Task`='+
          IntToStr(Tasks.FieldAsInteger(Tasks.FieldIndex['ID']))+') AND'+
          WHERE_Date+' AND (`Organization`='+ Org.FieldAsString(Org.FieldIndex['ID'])
-         +');');
+         +')' + ExtOrg + ';');
 
        P_Tasks_List_NS.Add(To40Symb('   - '+
          UTF8Decode(Tasks.FieldAsString(Tasks.FieldIndex['Name']))+':')+
@@ -345,11 +351,11 @@ const
 
 
 
-    procedure GetNIR;
+    procedure GetNIR(ExternalOrg: string = '0');
     var
       I2: Integer;
     begin
-    NIR:=GetTable('SELECT * FROM `NIR`');
+    NIR:=GetTable('SELECT * FROM `NIR` WHERE `External`=' + ExternalOrg);
 
     if NIR.Count=0 then
       begin
@@ -373,12 +379,21 @@ const
       if (Table.Count=0) or (Table.FieldAsInteger(Table.FieldIndex['N'])=0)
         then begin NIR.Next; Continue; end;
 
-      S1:='   - '+UTF8Decode(NIR.FieldAsString(NIR.FieldIndex['Num']));
+      S1:='   - '+UTF8Decode(NIR.FieldAsString(NIR.FieldIndex['Num'])) + ' (' +
+      UTF8Decode(NIR.FieldAsString(NIR.FieldIndex['Comment'])) + ')';
         repeat
         M_Add(DevideString(S1,S1));
         S1:='     '+S1
         until S1='     ';
 
+      if ExternalOrg = '1' then
+        begin
+        S1:='     - '+UTF8Decode(NIR.FieldAsString(NIR.FieldIndex['ExternalOrganization']));
+          repeat
+          M_Add(DevideString(S1,S1));
+          S1:='       '+S1
+          until S1='       ';
+        end;
 
       S1:='     - '+UTF8Decode(NIR.FieldAsString(NIR.FieldIndex['Title']));
         repeat
@@ -393,6 +408,32 @@ const
     NIR.Free;
     end;
 
+    function GetSpectraCount(ExternalValue: string = '0'): string;
+    begin
+      ExtOrg := '';
+      InnerJoin := '';
+
+      // В случае ИОС вычленим только ИОСовские спектры без внешних орг-ций
+      if Org.FieldAsInteger(Org.FieldIndex['Other']) = 0 then
+        begin
+        InnerJoin := ' INNER JOIN `NIR` ON (`NIR`.`ID` = `Spectra`.`NIR`)';
+        ExtOrg:= ' AND (`External`=' + ExternalValue + ')';
+        end;
+
+      Table:=GetTable('SELECT SUM(`Number`) AS NN FROM `Spectra`' + InnerJoin + ' '+
+        'WHERE (`Organization`=' + Org.FieldAsString(Org.FieldIndex['ID']) +
+        ') AND' + WHERE_Date + ExtOrg);
+
+      if Table.FieldAsString(Table.FieldIndex['NN'])='' then
+        begin
+        Table.Free;
+        Result := 'Next';
+        exit;
+        end;
+      Result := Table.FieldAsString(Table.FieldIndex['NN']);
+      Table.Free;
+    end;
+
   begin
   M_Add('============================================================');
   M_Add('                 Информация по организациям:                ');
@@ -403,16 +444,16 @@ const
   for I := 0 to Org.Count-1 do
     begin
     Table:=GetTable('SELECT SUM(`Number`) AS NN FROM `Spectra` '+
-      'WHERE (`Organization`=' + Org.FieldAsString(Org.FieldIndex['ID']) +
-      ') AND' + WHERE_Date);
+        'WHERE (`Organization`=' + Org.FieldAsString(Org.FieldIndex['ID']) +
+        ') AND' + WHERE_Date);
 
-    if Table.FieldAsString(Table.FieldIndex['NN'])='' then
-      begin
-      Table.Free;
-      Org.Next;
-      continue;
-      end;
+      if Table.FieldAsString(Table.FieldIndex['NN'])='' then
+        begin
+        Org.Next;
+        Continue;
+        end;
 
+    Table.Free;
     M_Add('------------------------------------------------------------');
     S1:=UTF8Decode(Org.FieldAsString(Org.FieldIndex['FullName']));
     repeat
@@ -420,15 +461,31 @@ const
     until S1.Length=0;
     M_Add('');
 
-    M_Add(To40Symb(' - Общее число спектров:')+
-      Table.FieldAsString(Table.FieldIndex['NN']));
-    Table.Free;
+    NSpectra := GetSpectraCount;
+    if NSpectra <> 'Next' then
+      begin
+      M_Add(To40Symb(' - Общее число спектров:') + NSpectra);
+      GetTasks;
+      GetNIR;
+      end;
 
-    GetTasks;
-    GetNIR;
+    if Org.FieldAsInteger(Org.FieldIndex['Other']) = 0 then
+      begin
+      M_Add('- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ');
+      M_Add('Работа на внешние организации');
+
+      NSpectra := GetSpectraCount('1');
+      if NSpectra <> 'Next' then
+        begin
+        M_Add(To40Symb(' - Общее число спектров:') + NSpectra);
+
+        GetTasks;
+        GetNIR('1');
+        end;
+
+      end;
 
     Org.Next;
-
     M_Add('');
     end;
   Org.Free;
