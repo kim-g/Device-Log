@@ -97,7 +97,7 @@ const
   WHERE_Date:=' (`Date` BETWEEN "'+DateFrom_Str+'" AND "'+DateTo_Str+'")';
   end;
 
-  procedure M_Add(S:String);
+  procedure M_Add(S:String = '');
   begin
   Memo.Lines.Add(S);
   end;
@@ -109,7 +109,8 @@ const
 
   Function To40Symb(S:String):string;
   begin
-  if Length(s)<40 then Result:=s+StringOfChar(' ',40-Length(s));
+  if Length(s)<50 then Result:=s+StringOfChar(' ',50-Length(s))
+  else Result:=s;
   end;
 
   procedure TitleShow;
@@ -267,9 +268,10 @@ const
     ExtOrg, InnerJoin: string;
 
 
-    procedure GetTasks;
+    procedure GetTasks(NIR: string = '');
     var I2:Integer;
-
+    NIR_String: String;
+    NIR_Space: string;
     begin
     P_Tasks_List:=TStringList.Create;
     P_Tasks_List_N:=TStringList.Create;
@@ -285,45 +287,55 @@ const
       end
      else
       begin
+      if NIR = '' then
+        begin
+        NIR_String := '';
+        NIR_Space := '';
+        end
+      else
+        begin
+        NIR_String := ' AND (`NIR`=' + NIR + ')';
+        NIR_Space := '     ';
+        end;
+
       for I2 := 0 to Tasks.Count-1 do
         begin
+        Table:=GetTable('SELECT '+
+            MultiSpectra[Tasks.FieldAsInteger(Tasks.FieldIndex['Multispectra'])]+
+            ' AS N FROM `Spectra`' + InnerJoin + ' WHERE (`Task`='+
+            IntToStr(Tasks.FieldAsInteger(Tasks.FieldIndex['ID']))+') AND'+
+            WHERE_Date+' AND (`Organization`='+ Org.FieldAsString(Org.FieldIndex['ID'])
+            +')' + ExtOrg + NIR_String + ';');
 
-      Table:=GetTable('SELECT '+
-         MultiSpectra[Tasks.FieldAsInteger(Tasks.FieldIndex['Multispectra'])]+
-         ' AS N FROM `Spectra`' + InnerJoin + ' WHERE (`Task`='+
-         IntToStr(Tasks.FieldAsInteger(Tasks.FieldIndex['ID']))+') AND'+
-         WHERE_Date+' AND (`Organization`='+ Org.FieldAsString(Org.FieldIndex['ID'])
-         +')' + ExtOrg + ';');
+        NN:=Table.FieldAsInteger(Table.FieldIndex['N']);
+        T:=Tasks.FieldAsDouble(Tasks.FieldIndex['Time']);
 
-       NN:=Table.FieldAsInteger(Table.FieldIndex['N']);
-       T:=Tasks.FieldAsDouble(Tasks.FieldIndex['Time']);
+        TotalTime:=TotalTime+NN*T;
+        inc(TotalNN,NN);
 
-       TotalTime:=TotalTime+NN*T;
-       inc(TotalNN,NN);
+        P_Tasks_List.Add(To40Symb(NIR_Space+'   - '+
+          UTF8Decode(Tasks.FieldAsString(Tasks.FieldIndex['Name']))+':')+
+          FloatToStr(roundTo(NN*T,-1))+' часов');
+        P_Tasks_List_N.Add(To40Symb(NIR_Space+'   - '+
+          UTF8Decode(Tasks.FieldAsString(Tasks.FieldIndex['Name']))+':')+
+          IntToStr(NN));
 
-       P_Tasks_List.Add(To40Symb('   - '+
-         UTF8Decode(Tasks.FieldAsString(Tasks.FieldIndex['Name']))+':')+
-         FloatToStr(roundTo(NN*T,-1))+' часов');
-       P_Tasks_List_N.Add(To40Symb('   - '+
-         UTF8Decode(Tasks.FieldAsString(Tasks.FieldIndex['Name']))+':')+
-         IntToStr(NN));
-
-       Table.Free;
+        Table.Free;
 
 
-       Table:=GetTable('SELECT SUM(`Number`) AS N FROM `Spectra`' + InnerJoin +
-         ' WHERE (`Task`='+
-         IntToStr(Tasks.FieldAsInteger(Tasks.FieldIndex['ID']))+') AND'+
-         WHERE_Date+' AND (`Organization`='+ Org.FieldAsString(Org.FieldIndex['ID'])
-         +')' + ExtOrg + ';');
+        Table:=GetTable('SELECT SUM(`Number`) AS N FROM `Spectra`' + InnerJoin +
+          ' WHERE (`Task`='+
+          IntToStr(Tasks.FieldAsInteger(Tasks.FieldIndex['ID']))+') AND'+
+          WHERE_Date+' AND (`Organization`='+ Org.FieldAsString(Org.FieldIndex['ID'])
+          +')' + ExtOrg + NIR_String + ';');
 
-       P_Tasks_List_NS.Add(To40Symb('   - '+
-         UTF8Decode(Tasks.FieldAsString(Tasks.FieldIndex['Name']))+':')+
-         Table.FieldAsString(Table.FieldIndex['N']));
+        P_Tasks_List_NS.Add(To40Symb(NIR_Space+'   - '+
+          UTF8Decode(Tasks.FieldAsString(Tasks.FieldIndex['Name']))+':')+
+          Table.FieldAsString(Table.FieldIndex['N']));
 
-       Table.Free;
+        Table.Free;
 
-       Tasks.Next;
+        Tasks.Next;
         end;
       end;
 
@@ -331,13 +343,13 @@ const
       M_Add(P_Tasks_List_NS[I2]);
     M_Add('');
 
-    M_Add(To40Symb(' - Число оказанных услуг:')+IntToStr(TotalNN));
+    M_Add(To40Symb(NIR_Space+' - Число оказанных услуг:')+IntToStr(TotalNN));
 
     for I2 := 0 to P_Tasks_List.Count-1 do
       M_Add(P_Tasks_List_N[I2]);
     M_Add('');
 
-    M_Add(To40Symb(' - Общее время работы:')+FloatToStr(roundTo(TotalTime, -1))+' часов');
+    M_Add(To40Symb(NIR_Space+' - Общее время работы:')+FloatToStr(roundTo(TotalTime, -1))+' часов');
 
     for I2 := 0 to P_Tasks_List.Count-1 do
       M_Add(P_Tasks_List[I2]);
@@ -388,21 +400,27 @@ const
 
       if ExternalOrg = '1' then
         begin
-        S1:='     - '+UTF8Decode(NIR.FieldAsString(NIR.FieldIndex['ExternalOrganization']));
+        S1:='     - Организация: '+UTF8Decode(NIR.FieldAsString(NIR.FieldIndex['ExternalOrganization']));
           repeat
           M_Add(DevideString(S1,S1));
           S1:='       '+S1
           until S1='       ';
         end;
 
-      S1:='     - '+UTF8Decode(NIR.FieldAsString(NIR.FieldIndex['Title']));
+      S1:='     - Название: '+UTF8Decode(NIR.FieldAsString(NIR.FieldIndex['Title']));
         repeat
         M_Add(DevideString(S1,S1));
         S1:='       '+S1
         until S1='       ';
 
-      NIR.Next;
+      M_Add(To40Symb('     - Всего спектров: ') +
+        Table.FieldAsString(Table.FieldIndex['N']));
       Table.Free;
+
+      GetTasks(NIR.FieldAsString(NIR.FieldIndex['ID']));
+
+      M_Add;
+      NIR.Next;
       end;
 
     NIR.Free;
