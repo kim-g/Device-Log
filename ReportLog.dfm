@@ -164,7 +164,7 @@ object Report: TReport
     Filter = 'Text files (*.txt) |*.txt'
     Options = [ofHideReadOnly, ofPathMustExist, ofEnableSizing]
     Title = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1086#1090#1095#1105#1090' '#1082#1072#1082'...'
-    Left = 184
-    Top = 432
+    Left = 200
+    Top = 424
   end
 end

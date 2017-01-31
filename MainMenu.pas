@@ -72,11 +72,13 @@ implementation
 
 uses AddSpUnit, DB_Structure, About_IOS_Unit, ReportLog;
 
+// Выполнение запоса SQL
 procedure ExecSQL(SQL:string);
 begin
 SQLite.ExecSQL(UTF8Encode(SQL));
 end;
 
+// Выполнение запроса SQL с выдачеё таблицы
 function GetTable(SQL:string):TSQLiteTable;
 begin
 GetTable:=SQLite.GetTable(UTF8Encode(SQL))
@@ -92,6 +94,7 @@ SHGetPathFromIDList( PItemID, @ansiSbuf[0] );
 AppData := ansiSbuf;
 end;
 
+//Создание бекапа
 procedure TMainMenuForm.Backup;
 var
   Table: TSQLiteTable;
@@ -105,13 +108,13 @@ if Table.Count > 0 then    // Если он вообще был
   begin
   BackupDate := Table.FieldAsString(Table.FieldIndex['Backup_Date']);
   LastBackup := EncodeDate(StrToInt( BackupDate.Substring(0,4)),StrToInt( BackupDate.Substring(5,2)),
-  StrToInt( BackupDate.Substring(8,2)));
+    StrToInt( BackupDate.Substring(8,2)));
 
   // То проверяем время. Если прошло меньше недели, ничего не делаем.
   if LastBackup + 7 > Now then Exit;
   end;
 
-// В любом другом случае
+// В любом другом случае вычислим имя файла бекапа
 Filename := Config.ReadString('General','DBFile','');
 FileName := StringReplace(ExtractFileName(FileName),ExtractFileExt(FileName),'',[]);
 FileName := Config.ReadString('General','DBBackup','') +
@@ -139,6 +142,7 @@ LogQuery.Active:=true;
 LogReport.ShowReport;
 end;
 
+// Показать отчёт
 procedure TMainMenuForm.Button3Click(Sender: TObject);
 begin
 Report.Prepare;
@@ -163,6 +167,7 @@ var
 const
   NF = 'NoFile';        //Чтобы всё время не писать.
 begin
+// Запустим анимацию гифки с логотипом ИОС
 with (Image1.Picture.Graphic as TGIFImage) do
   begin
   AnimateLoop := glEnabled;
@@ -170,8 +175,6 @@ with (Image1.Picture.Graphic as TGIFImage) do
   Animate := True;
   end;
 
-{if not DirectoryExists(AppData+PF) then
-  ForceDirectories(AppData+PF);  }                 //Если нет пути к файлу с настройками, то создаём его
 Config:=TINIFile.Create(ExtractFilePath(Application.ExeName)+CONFIG_FILE);             //Открываем файл с настройками.
 
 //Подгружаем надписи
@@ -179,6 +182,7 @@ Caption:=Config.ReadString('General','Title','ERROR!!!');
 Application.Title:=Config.ReadString('General','Title','ERROR!!!');
 Label2.Caption := Config.ReadString('General','Title','ERROR!!!');
 
+// Предложим показать журнал за текущий год
 Edit1.Text := IntToStr(CurrentYear);
 
 //Загружаем адрес БД

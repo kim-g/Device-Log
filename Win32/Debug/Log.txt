@@ -1,1 +1,0 @@
-INSERT INTO [Spectra] ([Date], Organization, Laboratory, [Name], Subst, Conditions, [Number], [Task], [User], NIR) VALUES (DATE(), 1, 4, 2, "Базовая линия", "Для сравнения с новой лампой", 1, 4, 2, 1);
